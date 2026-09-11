@@ -58,7 +58,7 @@ Multiple Systems / Organizations
    - Per-record exception isolation: Malformed individual records log warnings without stopping the processing pipeline or crashing the web app.
    - User-friendly UI status display ("Processing completed with warnings"). No Python tracebacks exposed to users.
 
-3. **Centralized SQLite SIEM Storage (`siem.db`)**:
+3. **Centralized SQLite SIEM Storage**:
    - Continuous append ingestion: New file uploads add records to the centralized `security_logs` table (never drops old database tables).
    - Performance indexing on `timestamp`, `source`, `source_type`, `organization`, `ip_address`, `severity`.
    - Event SHA-256 fingerprinting for duplicate detection (`is_duplicate`).
@@ -87,60 +87,44 @@ Multiple Systems / Organizations
 
 ---
 
-## 🌐 PERMANENT RENDER DEPLOYMENT
+## ⚡ VERCEL DEMO DEPLOYMENT
 
-Follow these steps to deploy this application permanently on Render:
+Follow these steps to deploy this application on Vercel for public college demonstration:
 
 1. **Push Project to GitHub**:
-   Initialize git repository and push your project to GitHub:
+   Ensure your project is committed and pushed to GitHub:
    ```bash
-   git init
    git add .
-   git commit -m "Production ready SIEM Log Ingestion System"
-   git remote add origin https://github.com/YOUR_USERNAME/siem-log-ingestion.git
+   git commit -m "Add Vercel deployment configuration"
    git push -u origin main
    ```
 
-2. **Create Render Web Service**:
-   - Log in to your [Render Dashboard](https://dashboard.render.com).
-   - Click **New +** $\rightarrow$ **Web Service**.
-   - Select and connect your `siem-log-ingestion` GitHub repository.
+2. **Deploy on Vercel**:
+   - Go to your [Vercel Dashboard](https://vercel.com/dashboard).
+   - Click **Add New...** $\rightarrow$ **Project**.
+   - Import your GitHub repository (`siem-log-ingestion`).
+   - Select the project root.
+   - Vercel automatically detects the Python runtime (`api/index.py` & `vercel.json`).
+   - Click **Deploy**.
+   - Vercel will generate your public HTTPS URL automatically (e.g., `https://siem-log-ingestion.vercel.app`).
 
-3. **Configure Service Settings**:
-   - **Name**: `siem-log-ingestion`
-   - **Environment**: `Python 3`
-   - **Region**: Select your preferred region (e.g. Oregon, USA or Frankfurt).
-   - **Branch**: `main`
-   - **Build Command**:
-     ```bash
-     pip install -r requirements.txt
-     ```
-   - **Start Command**:
-     ```bash
-     gunicorn app:app
-     ```
-   - **Health Check Path**: `/health`
+> [!WARNING]
+> **Serverless Demonstration Storage Notice**:
+> Vercel deployment is configured specifically for **public demonstration**.
+> Vercel operates on a serverless architecture where local uploaded files and SQLite databases in `/tmp` are **ephemeral** (they persist during the active function instance but may reset on cold starts).
+> For permanent production persistence, use a persistent disk provider (such as Render with `/var/data`) or an external database (such as PostgreSQL/Supabase).
 
-4. **Add Render Persistent Disk (Required for SQLite Persistence)**:
-   - Scroll down to the **Disks** section in Render settings.
-   - Click **Add Disk**:
-     - **Name**: `siem-data`
-     - **Mount Path**: `/var/data`
-     - **Size**: `1 GB` (or larger depending on log volume)
+---
 
-5. **Configure Environment Variables**:
-   Under **Environment Variables**, add the following key-value pairs:
-   - `SIEM_DATA_DIR` = `/var/data`
-   - `UPLOAD_DIR` = `/var/data/uploads`
-   - `OUTPUT_DIR` = `/var/data/output`
+## 🌐 PERMANENT RENDER DEPLOYMENT
 
-6. **Deploy Web Service**:
-   - Click **Create Web Service**.
-   - Render will automatically build the service, run health checks at `/health`, and assign a public HTTPS URL (e.g., `https://siem-log-ingestion.onrender.com`).
+For permanent storage hosting with a persistent disk mount (`/var/data`):
 
-7. **Verify Production Deployment**:
-   - Visit `https://siem-log-ingestion.onrender.com/health` $\rightarrow$ returns `{"status": "ok"}`.
-   - Access `https://siem-log-ingestion.onrender.com` to test file ingestion and SIEM dashboards live in production.
+1. Connect GitHub repository to Render Web Service.
+2. Build Command: `pip install -r requirements.txt`
+3. Start Command: `gunicorn app:app`
+4. Health Check Path: `/health`
+5. Mount Persistent Disk: `/var/data` (set `SIEM_DATA_DIR=/var/data`).
 
 ---
 

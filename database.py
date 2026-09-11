@@ -3,16 +3,33 @@ import sqlite3
 import json
 from typing import List, Dict, Any, Optional, Tuple
 
-# Support environment-based data directory (e.g. Render Persistent Disk /var/data)
-SIEM_DATA_DIR = os.environ.get("SIEM_DATA_DIR", os.path.dirname(__file__))
-os.makedirs(SIEM_DATA_DIR, exist_ok=True)
+# Dynamic Storage Path Resolution (Supports Local, Render /var/data, and Vercel Serverless /tmp)
+def get_siem_data_dir() -> str:
+    if "SIEM_DATA_DIR" in os.environ:
+        target = os.environ["SIEM_DATA_DIR"]
+    elif os.environ.get("VERCEL") == "1" or os.environ.get("VERCEL_ENV"):
+        target = "/tmp/siem_data"
+    else:
+        target = os.path.dirname(__file__)
 
+    try:
+        os.makedirs(target, exist_ok=True)
+    except Exception:
+        target = "/tmp/siem_data"
+        os.makedirs(target, exist_ok=True)
+
+    return target
+
+SIEM_DATA_DIR = get_siem_data_dir()
 DB_PATH = os.environ.get("SIEM_DB_PATH", os.path.join(SIEM_DATA_DIR, "siem.db"))
 
 def get_db_connection():
     db_dir = os.path.dirname(DB_PATH)
     if db_dir:
-        os.makedirs(db_dir, exist_ok=True)
+        try:
+            os.makedirs(db_dir, exist_ok=True)
+        except Exception:
+            pass
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
