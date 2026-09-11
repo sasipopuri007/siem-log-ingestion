@@ -17,6 +17,7 @@ from ingestion.parsers.json_parser import JSONParser
 from ingestion.parsers.syslog_parser import SyslogParser
 from ingestion.parsers.snort_parser import SnortParser
 from ingestion.parsers.fallback_parser import FallbackParser
+from ingestion.parsers.evtx_parser import EVTXParser
 
 class TestSIEMIngestionSystem(unittest.TestCase):
 
@@ -172,6 +173,16 @@ class TestSIEMIngestionSystem(unittest.TestCase):
         # Upload exact same file again
         res2 = LogIngestionPipeline.process_file(file1, organization="OrgX")
         self.assertEqual(res2["duplicate_count"], 1)
+
+    def test_12_evtx_field_aliases_and_ip_sniffing(self):
+        parser = EVTXParser()
+        # Verify alias dictionaries contain key EVTX names
+        from ingestion.parsers.evtx_parser import SRC_IP_KEYS, DST_IP_KEYS, SRC_PORT_KEYS, DST_PORT_KEYS, USER_KEYS
+        self.assertIn("ipaddress", SRC_IP_KEYS)
+        self.assertIn("destip", DST_IP_KEYS)
+        self.assertIn("ipport", SRC_PORT_KEYS)
+        self.assertIn("destport", DST_PORT_KEYS)
+        self.assertIn("targetusername", USER_KEYS)
 
 if __name__ == "__main__":
     unittest.main()
