@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+*.db
+uploads/
+output/
+.pytest_cache/
+CSE-CIC-IDS2018/
+*.ids2018

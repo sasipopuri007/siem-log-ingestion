@@ -1,0 +1,2 @@
+src_ip=192.168.1.12 dst_ip=10.0.0.50 user=operator action=FILE_ACCESS status=ALLOWED severity=INFO
+src_ip=192.168.1.99 dst_ip=10.0.0.50 user=guest action=CONFIG_CHANGE status=DENIED severity=WARNING

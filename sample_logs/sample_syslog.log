@@ -1,0 +1,4 @@
+<34>Sep 11 10:20:15 server01 sshd[14205]: Failed password for invalid user admin from 192.168.1.50 port 44892 ssh2
+<34>Sep 11 10:20:18 server01 sshd[14205]: Failed password for invalid user admin from 192.168.1.50 port 44894 ssh2
+<13>Sep 11 10:21:05 server01 sshd[14210]: Accepted password for root from 192.168.1.10 port 51200 ssh2
+2026-09-11 10:22:00 | SERVER02 | 10.0.0.15 | dbadmin | DATABASE_LOGIN | SUCCESS

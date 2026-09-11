@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: siem-log-ingestion
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    healthCheckPath: /health
+    disk:
+      name: siem-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: SIEM_DATA_DIR
+        value: /var/data
+      - key: UPLOAD_DIR
+        value: /var/data/uploads
+      - key: OUTPUT_DIR
+        value: /var/data/output

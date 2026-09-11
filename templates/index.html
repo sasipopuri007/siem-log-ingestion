@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Enhanced SIEM | Centralized Security Log Ingestion</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Chart.js for SIEM Dashboard -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="dark-theme">
+    <!-- Top Navigation Header -->
+    <header class="top-nav">
+        <div class="nav-brand">
+            <div class="shield-icon">🛡️</div>
+            <div class="brand-text">
+                <span class="brand-title">AI-ENHANCED SIEM</span>
+                <span class="brand-subtitle">Centralized Log Ingestion & SOC Engine</span>
+            </div>
+        </div>
+        
+        <nav class="nav-tabs">
+            <button class="nav-tab active" data-tab="upload-section" id="nav-upload">
+                <span class="tab-icon">📥</span> Ingestion Engine
+            </button>
+            <button class="nav-tab" data-tab="dashboard-section" id="nav-dashboard">
+                <span class="tab-icon">📊</span> SIEM Dashboard
+            </button>
+            <button class="nav-tab" data-tab="events-section" id="nav-events">
+                <span class="tab-icon">🔍</span> Event Explorer
+            </button>
+            <button class="nav-tab" data-tab="handoff-section" id="nav-handoff">
+                <span class="tab-icon">🤖</span> ML Handoff
+            </button>
+        </nav>
+
+        <div class="nav-status">
+            <div class="status-indicator active"></div>
+            <span class="status-label">SIEM Pipeline Online</span>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-container">
+
+        <!-- TAB 1: LOG INGESTION & PROCESSING STEPPER -->
+        <section id="upload-section" class="tab-content active">
+            <div class="hero-banner">
+                <h2>CENTRALIZED SECURITY LOG INGESTION</h2>
+                <p>Generic, fault-tolerant log ingestion pipeline supporting Windows EVTX, CSV, JSON, NDJSON, Syslog, Snort, and Unstructured Logs.</p>
+            </div>
+
+            <div class="ingestion-grid">
+                <!-- Upload Form Card -->
+                <div class="glass-card upload-card">
+                    <div class="card-header">
+                        <h3>Upload Security Log File</h3>
+                        <span class="badge badge-info">Auto Format Sniffer</span>
+                    </div>
+                    
+                    <div class="dropzone" id="dropzone">
+                        <input type="file" id="file-input" class="file-input-hidden" />
+                        <div class="dropzone-content">
+                            <div class="upload-icon">📁</div>
+                            <h4>Drag & Drop Log File Here</h4>
+                            <p class="dropzone-sub">or click to select file from your computer</p>
+                            <button class="btn btn-secondary" onclick="document.getElementById('file-input').click()">[ CHOOSE FILE ]</button>
+                            <div id="file-selected-name" class="file-selected-name">No file selected</div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="org-select">Organization Target:</label>
+                            <select id="org-select" class="form-control">
+                                <option value="Organization 1">Organization 1 (Enterprise HQ)</option>
+                                <option value="Organization 2">Organization 2 (Branch Office)</option>
+                                <option value="Organization 3">Organization 3 (Cloud VPC)</option>
+                                <option value="custom">+ Add Custom Organization...</option>
+                            </select>
+                            <input type="text" id="org-custom-input" class="form-control hidden mt-2" placeholder="Enter Custom Organization Name" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="source-input">Source System Name:</label>
+                            <input type="text" id="source-input" class="form-control" placeholder="Auto Detect (or enter host/source)" />
+                        </div>
+                    </div>
+
+                    <div class="action-bar">
+                        <button id="btn-process-log" class="btn btn-primary btn-large" disabled>
+                            ⚡ [ PROCESS LOG ]
+                        </button>
+                    </div>
+
+                    <div class="supported-formats">
+                        <span class="fmt-label">Supported Formats:</span>
+                        <span class="fmt-chip">EVTX</span>
+                        <span class="fmt-chip">CSV</span>
+                        <span class="fmt-chip">JSON</span>
+                        <span class="fmt-chip">NDJSON</span>
+                        <span class="fmt-chip">TXT</span>
+                        <span class="fmt-chip">LOG</span>
+                        <span class="fmt-chip">SYSLOG</span>
+                        <span class="fmt-chip">SNORT</span>
+                    </div>
+                </div>
+
+                <!-- Live Stepper Status Card -->
+                <div class="glass-card stepper-card">
+                    <div class="card-header">
+                        <h3>Ingestion Stepper Pipeline</h3>
+                        <span id="stepper-status-badge" class="badge badge-idle">Ready</span>
+                    </div>
+
+                    <div class="stepper-pipeline">
+                        <div class="step-item" id="step-1">
+                            <div class="step-circle">1</div>
+                            <div class="step-label">Upload</div>
+                        </div>
+                        <div class="step-connector"></div>
+                        <div class="step-item" id="step-2">
+                            <div class="step-circle">2</div>
+                            <div class="step-label">Format Detection</div>
+                        </div>
+                        <div class="step-connector"></div>
+                        <div class="step-item" id="step-3">
+                            <div class="step-circle">3</div>
+                            <div class="step-label">Log Collection</div>
+                        </div>
+                        <div class="step-connector"></div>
+                        <div class="step-item" id="step-4">
+                            <div class="step-circle">4</div>
+                            <div class="step-label">Parsing</div>
+                        </div>
+                        <div class="step-connector"></div>
+                        <div class="step-item" id="step-5">
+                            <div class="step-circle">5</div>
+                            <div class="step-label">Normalization</div>
+                        </div>
+                        <div class="step-connector"></div>
+                        <div class="step-item" id="step-6">
+                            <div class="step-circle">6</div>
+                            <div class="step-label">Validation</div>
+                        </div>
+                        <div class="step-connector"></div>
+                        <div class="step-item" id="step-7">
+                            <div class="step-circle">7</div>
+                            <div class="step-label">SIEM Storage</div>
+                        </div>
+                        <div class="step-connector"></div>
+                        <div class="step-item" id="step-8">
+                            <div class="step-circle">8</div>
+                            <div class="step-label">ML Handoff Ready</div>
+                        </div>
+                    </div>
+
+                    <!-- Ingestion Processing Results Summary Box -->
+                    <div class="results-box" id="results-box">
+                        <h4>Pipeline Execution Summary</h4>
+                        <div class="metrics-mini-grid">
+                            <div class="metric-mini">
+                                <span class="m-label">File:</span>
+                                <span class="m-val" id="res-filename">-</span>
+                            </div>
+                            <div class="metric-mini">
+                                <span class="m-label">Format Detected:</span>
+                                <span class="m-val badge-chip" id="res-format">-</span>
+                            </div>
+                            <div class="metric-mini">
+                                <span class="m-label">Events Received:</span>
+                                <span class="m-val" id="res-received">0</span>
+                            </div>
+                            <div class="metric-mini">
+                                <span class="m-label">Events Parsed:</span>
+                                <span class="m-val" id="res-parsed">0</span>
+                            </div>
+                            <div class="metric-mini">
+                                <span class="m-label">Events Normalized:</span>
+                                <span class="m-val" id="res-normalized">0</span>
+                            </div>
+                            <div class="metric-mini">
+                                <span class="m-label">Events Stored:</span>
+                                <span class="m-val highlight" id="res-stored">0</span>
+                            </div>
+                            <div class="metric-mini">
+                                <span class="m-label">Warnings:</span>
+                                <span class="m-val warning-text" id="res-warnings">0</span>
+                            </div>
+                            <div class="metric-mini">
+                                <span class="m-label">Duplicates Flagged:</span>
+                                <span class="m-val" id="res-duplicates">0</span>
+                            </div>
+                        </div>
+
+                        <div class="status-summary-bar mt-3" id="status-summary-bar">
+                            <span class="status-title">Status:</span>
+                            <span class="status-text" id="res-status-text">Awaiting log submission...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- TAB 2: SIEM DASHBOARD -->
+        <section id="dashboard-section" class="tab-content">
+            <div class="section-header">
+                <h2>SIEM ANALYTICS DASHBOARD</h2>
+                <button class="btn btn-secondary btn-sm" onclick="loadDashboardStats()">🔄 Refresh Metrics</button>
+            </div>
+
+            <!-- Dashboard Metric Cards -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="card-icon cyan">📜</div>
+                    <div class="metric-data">
+                        <div class="metric-value" id="stat-total-events">0</div>
+                        <div class="metric-title">Total SIEM Events</div>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="card-icon blue">💻</div>
+                    <div class="metric-data">
+                        <div class="metric-value" id="stat-total-sources">0</div>
+                        <div class="metric-title">Total Sources</div>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="card-icon green">🖥️</div>
+                    <div class="metric-data">
+                        <div class="metric-value" id="stat-total-systems">0</div>
+                        <div class="metric-title">Total Systems</div>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="card-icon purple">🏢</div>
+                    <div class="metric-data">
+                        <div class="metric-value" id="stat-total-orgs">0</div>
+                        <div class="metric-title">Organizations</div>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="card-icon amber">📂</div>
+                    <div class="metric-data">
+                        <div class="metric-value" id="stat-files-processed">0</div>
+                        <div class="metric-title">Processed Files</div>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="card-icon red">⚠️</div>
+                    <div class="metric-data">
+                        <div class="metric-value" id="stat-high-sev">0</div>
+                        <div class="metric-title">High/Critical Severity</div>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="card-icon yellow">🚨</div>
+                    <div class="metric-data">
+                        <div class="metric-value" id="stat-warnings">0</div>
+                        <div class="metric-title">Parsing Warnings</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Container Grid -->
+            <div class="charts-grid mt-4">
+                <div class="glass-card chart-card">
+                    <h3>Events by Source</h3>
+                    <div class="chart-container"><canvas id="chart-sources"></canvas></div>
+                </div>
+                <div class="glass-card chart-card">
+                    <h3>Events by Source Type</h3>
+                    <div class="chart-container"><canvas id="chart-source-types"></canvas></div>
+                </div>
+                <div class="glass-card chart-card">
+                    <h3>Events by Organization</h3>
+                    <div class="chart-container"><canvas id="chart-orgs"></canvas></div>
+                </div>
+                <div class="glass-card chart-card">
+                    <h3>Events by Severity</h3>
+                    <div class="chart-container"><canvas id="chart-severity"></canvas></div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- TAB 3: SIEM EVENT EXPLORER -->
+        <section id="events-section" class="tab-content">
+            <div class="section-header">
+                <h2>SIEM EVENT EXPLORER</h2>
+                <span class="record-counter">Total Records: <strong id="events-total-count">0</strong></span>
+            </div>
+
+            <!-- Filters Bar -->
+            <div class="glass-card filter-card">
+                <div class="filter-row">
+                    <input type="text" id="filter-search" class="form-control" placeholder="🔍 Search IP, User, Hostname, Raw Log..." />
+                    
+                    <select id="filter-org" class="form-control">
+                        <option value="">All Organizations</option>
+                    </select>
+
+                    <select id="filter-source" class="form-control">
+                        <option value="">All Sources</option>
+                    </select>
+
+                    <select id="filter-source-type" class="form-control">
+                        <option value="">All Source Types</option>
+                        <option value="EVTX">EVTX</option>
+                        <option value="CSV">CSV</option>
+                        <option value="JSON">JSON</option>
+                        <option value="NDJSON">NDJSON</option>
+                        <option value="SYSLOG">SYSLOG</option>
+                        <option value="SNORT">SNORT</option>
+                        <option value="GENERIC_TEXT">GENERIC_TEXT</option>
+                    </select>
+
+                    <select id="filter-severity" class="form-control">
+                        <option value="">All Severities</option>
+                        <option value="CRITICAL">CRITICAL</option>
+                        <option value="HIGH">HIGH</option>
+                        <option value="MEDIUM">MEDIUM</option>
+                        <option value="LOW">LOW</option>
+                        <option value="INFO">INFO</option>
+                    </select>
+
+                    <button class="btn btn-primary" onclick="loadEvents(1)">Filter</button>
+                    <button class="btn btn-secondary" onclick="resetFilters()">Reset</button>
+                </div>
+            </div>
+
+            <!-- Events Table Card -->
+            <div class="glass-card table-card mt-3">
+                <div class="table-responsive">
+                    <table class="data-table" id="events-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Timestamp</th>
+                                <th>Organization</th>
+                                <th>Source</th>
+                                <th>Type</th>
+                                <th>Hostname</th>
+                                <th>IP Address</th>
+                                <th>Dest IP</th>
+                                <th>Event Type</th>
+                                <th>Severity</th>
+                                <th>Parser Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="events-tbody">
+                            <tr><td colspan="12" class="text-center py-4">No events found. Upload a log to populate the SIEM.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination Footer -->
+                <div class="table-footer">
+                    <div class="page-info" id="page-info">Page 1 of 1</div>
+                    <div class="pagination-controls">
+                        <button class="btn btn-secondary btn-sm" id="btn-prev-page" onclick="prevPage()">Previous</button>
+                        <button class="btn btn-secondary btn-sm" id="btn-next-page" onclick="nextPage()">Next</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- TAB 4: ML HANDOFF -->
+        <section id="handoff-section" class="tab-content">
+            <div class="glass-card handoff-card">
+                <div class="handoff-header">
+                    <div class="handoff-badge">✅ INGESTION & SIEM MODULE COMPLETE</div>
+                    <h2>ML HANDOFF READY</h2>
+                    <p>Normalized SIEM records are structured, cleaned, and ready to be consumed by downstream Machine Learning modules.</p>
+                </div>
+
+                <div class="handoff-action mt-4">
+                    <a href="/api/export" download class="btn btn-success btn-large">
+                        📥 [ EXPORT ML-READY DATA ]
+                    </a>
+                    <span class="btn-subtext">Exports full normalized dataset as standard CSV format.</span>
+                </div>
+
+                <div class="schema-spec mt-5">
+                    <h3>Normalized SIEM Export Schema</h3>
+                    <div class="schema-tags">
+                        <span class="schema-tag">timestamp</span>
+                        <span class="schema-tag">organization</span>
+                        <span class="schema-tag">source</span>
+                        <span class="schema-tag">source_type</span>
+                        <span class="schema-tag">hostname</span>
+                        <span class="schema-tag">ip_address</span>
+                        <span class="schema-tag">destination_ip</span>
+                        <span class="schema-tag">source_port</span>
+                        <span class="schema-tag">destination_port</span>
+                        <span class="schema-tag">user</span>
+                        <span class="schema-tag">event_type</span>
+                        <span class="schema-tag">event_id</span>
+                        <span class="schema-tag">provider</span>
+                        <span class="schema-tag">protocol</span>
+                        <span class="schema-tag">status</span>
+                        <span class="schema-tag">action</span>
+                        <span class="schema-tag">severity</span>
+                        <span class="schema-tag">attack_type</span>
+                        <span class="schema-tag">suspicious</span>
+                    </div>
+
+                    <div class="alert-box alert-info mt-4">
+                        ℹ️ <strong>Implementation Boundary:</strong> This system strictly ingests, parses, standardizes, validates, and stores security logs. Attack prediction, Random Forest models, and automated response actions will be attached by teammates consuming this exported dataset.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Event Detail Drawer / Modal -->
+    <div class="modal-overlay" id="event-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>SIEM Event Detail #<span id="modal-event-id">-</span></h3>
+                <button class="close-btn" onclick="closeModal()">✖</button>
+            </div>
+            <div class="modal-body" id="modal-body-content">
+                <!-- Populated dynamically via JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

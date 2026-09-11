@@ -1,0 +1,2 @@
+{"timestamp": "2026-09-11T10:30:00Z", "src_ip": "192.168.1.88", "dst_ip": "10.0.0.1", "user": "jdoe", "event_type": "UserLogin", "status": "SUCCESS", "severity": "LOW"}
+{"timestamp": "2026-09-11T10:31:15Z", "src_ip": "192.168.1.200", "dst_ip": "10.0.0.1", "user": "root", "event_type": "SudoAccess", "status": "FAILED", "severity": "HIGH"}
