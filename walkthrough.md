@@ -1,33 +1,33 @@
-# Walkthrough - SIEM Log Ingestion System (Vercel & Render Deployment Ready)
+# Walkthrough - Final EVTX Extraction & GitHub Push Complete
 
-The **Generic & Robust SIEM Log Ingestion System** under `C:\Users\user\.gemini\antigravity\scratch\siem_log_ingestion` is now fully configured for **Vercel Demo Deployment** as well as **Render Permanent Deployment**.
+The **Generic & Robust SIEM Log Ingestion System** under `C:\Users\user\.gemini\antigravity\scratch\siem_log_ingestion` has been enhanced with deep **EVTX EventData & XML extraction** and successfully published to GitHub at:
+`https://github.com/sasipopuri007/siem-log-ingestion.git`
 
 ---
 
-## ⚡ Vercel Demonstration Deployment Changes
+## 🛠️ EVTX Field Extraction Enhancements (`ingestion/parsers/evtx_parser.py`)
 
-1. **Native Python Serverless Entrypoint (`api/index.py`)**:
-   - Created Vercel serverless function entrypoint exposing the top-level `app` Flask instance:
-     ```python
-     import sys, os
-     sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-     from app import app
-     ```
+1. **Deep `EventData` & XML Traversal**:
+   - Traverses all `<Data Name="...">val</Data>` elements and text nodes inside `<EventData>` and `<UserData>`.
 
-2. **Vercel Zero-Config Specification (`vercel.json`)**:
-   - Created Vercel build and route specification directing all incoming traffic to `api/index.py` using Vercel's native `@vercel/python` runtime.
+2. **Expanded Alias Dictionaries**:
+   - **Source IP (`ip_address`)**: `IpAddress`, `SrcIp`, `SourceAddress`, `ClientAddress`, `WorkstationIP`, `CallerAddress`, `NetworkAddress`, `SourceIp`, `SrcAddress`, `ClientIP`, `RemoteAddress`, `RemoteIP`.
+   - **Destination IP (`destination_ip`)**: `DestIp`, `DestinationAddress`, `TargetAddress`, `ServerIP`, `DestAddress`, `DestinationIp`, `ServerAddress`, `TargetIP`, `DstIp`, `DstAddress`.
+   - **Source Port (`source_port`)**: `IpPort`, `SrcPort`, `SourcePort`, `ClientPort`, `CallerPort`, `SourcePortNumber`, `SrcPortNum`.
+   - **Destination Port (`destination_port`)**: `DestPort`, `DestinationPort`, `TargetPort`, `ServerPort`, `DestinationPortNumber`, `DstPort`, `DstPortNum`.
+   - **User (`user`)**: `TargetUserName`, `SubjectUserName`, `User`, `AccountName`, `TargetUser`, `SubjectUser`, `UserName`, `LogonUser`, `WorkstationUser`.
+   - **Hostname (`hostname`)**: `Computer`, `WorkstationName`, `Workstation`, `TargetServerName`, `HostName`, `MachineName`.
+   - **Protocol (`protocol`)**: `AuthenticationPackageName`, `LogonProcessName`, `Protocol`, `LayerName`, `TransmittedServices`, `NetworkProtocol`, `SecurityPackageName`.
+   - **Status (`status`)**: `Status`, `SubStatus`, `LogonType` (e.g. `LogonType 2`, `LogonType 3`, `LogonType 10`), `ResultCode`, `FailureReason`.
+   - **Action (`action`)**: `Task`, `Audit`, `Accesses`, `AccessMask`, `PrivilegeList`, `ProcessName`, `CommandLine`.
 
-3. **Dynamic Serverless Storage (`/tmp` Fallback)**:
-   - Refactored `database.py` and `app.py` path resolution:
-     - On local machine / Render: uses standard persistent disk directories.
-     - On Vercel: dynamically detects Vercel serverless environment (`VERCEL=1`) or unwritable root and routes temporary SQLite DB (`siem.db`), uploads, and exports to `/tmp/siem_data`.
+3. **Deep Heuristic IP Sniffing**:
+   - If specific IP key aliases are missing in an EVTX record, scans all text values in `EventData` using IPv4 (`IPV4_PATTERN`) and IPv6 (`IPV6_PATTERN`) regexes.
+   - Automatically sanitizes invalid placeholder values (`"-"`, `"0"`, `"0x0"`, `"::1"`, `"127.0.0.1"`).
 
-4. **Preserved SIEM Ingestion Engine & Standard Features**:
-   - Native EVTX (`python-evtx`), CSV, JSON, NDJSON, Syslog, auth.log, Snort, Key-Value, and Generic Text Fallback parsers remain 100% active.
-   - Zero invented `attack_type` or `suspicious` values (strict ML team handoff boundary preserved).
-
-5. **Health Check Endpoint (`GET /health`)**:
-   - Returns `{"status": "ok"}` with HTTP 200.
+4. **Zero Prediction Policy**:
+   - If an EVTX event does not contain an IP or port, the field is cleanly left as `NULL` (`None`).
+   - No artificial attack detection or Random Forest logic added.
 
 ---
 
@@ -36,59 +36,52 @@ The **Generic & Robust SIEM Log Ingestion System** under `C:\Users\user\.gemini\
 ### 1. Automated Unit Test Suite
 ```bash
 python -m unittest discover -s tests -p "test_*.py"
-............
+.............
 ----------------------------------------------------------------------
-Ran 12 tests in 0.960s
+Ran 13 tests in 1.193s
 
 OK
 ```
+**Status**: `13/13 Tests PASSED (100% OK)`
 
-### 2. Local Health Endpoint Verification
+### 2. Multi-Format Ingestion Pipeline Execution Test
+
+| Log File | Format | Received | Parsed | Normalized | Stored | Warnings | Duplicates | Step | Status |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
+| `sample_ids2018.csv` | `CSV` | 4 | 4 | 4 | 4 | 0 | 0 | `ML Handoff Ready` | `SUCCESS` |
+| `sample_jsonl.ndjson` | `NDJSON` | 2 | 2 | 2 | 2 | 0 | 0 | `ML Handoff Ready` | `SUCCESS` |
+| `sample_kv.txt` | `GENERIC_TEXT` | 2 | 2 | 2 | 2 | 2 | 0 | `ML Handoff Ready` | `Completed with warnings` |
+| `sample_malformed.log` | `SYSLOG` | 3 | 3 | 3 | 3 | 1 | 0 | `ML Handoff Ready` | `Completed with warnings` |
+| `sample_snort.alert` | `SNORT` | 2 | 2 | 2 | 2 | 0 | 0 | `ML Handoff Ready` | `SUCCESS` |
+| `sample_syslog.log` | `SYSLOG` | 4 | 4 | 4 | 4 | 0 | 0 | `ML Handoff Ready` | `SUCCESS` |
+
+---
+
+## 🚀 GitHub Push Status
+
 ```bash
-GET http://localhost:5000/health
-HTTP 200 OK
-{
-  "status": "ok"
-}
+git push -u origin main
+To https://github.com/sasipopuri007/siem-log-ingestion.git
+   2499f77..27f1436  main -> main
+branch 'main' set up to track 'origin/main'.
 ```
+**GitHub Repository URL**: `https://github.com/sasipopuri007/siem-log-ingestion.git`
 
 ---
 
-## 📁 Updated Codebase Structure
+## 🌐 1-Click Deployment Instructions
 
-Target Location: `C:\Users\user\.gemini\antigravity\scratch\siem_log_ingestion`
+### Deploying on Render (Persistent Storage)
+1. Go to [Render Dashboard](https://dashboard.render.com) $\rightarrow$ **New +** $\rightarrow$ **Web Service**.
+2. Select your connected `sasipopuri007/siem-log-ingestion` repository.
+3. Render automatically picks up `render.yaml` with pre-configured settings:
+   - Build Command: `pip install -r requirements.txt`
+   - Start Command: `gunicorn app:app`
+   - Health Check: `/health`
+   - Persistent Disk: `/var/data`
+4. Click **Deploy Web Service**.
 
-```
-siem_log_ingestion/
-├── api/
-│   └── index.py               # Vercel serverless Python entrypoint
-├── vercel.json                # Vercel deployment routing configuration
-├── render.yaml                # Render Blueprint deployment configuration
-├── app.py                     # Production Flask Web Server & GET /health API
-├── database.py                # SQLite SIEM Database management with Vercel /tmp support
-├── requirements.txt           # Production dependencies (Flask, python-evtx, hexdump, gunicorn)
-├── .gitignore                 # Version control exclusions
-├── README.md                  # Comprehensive Documentation & Vercel/Render Setup Guide
-├── generate_samples.py        # Helper script to create test security log files
-├── ingestion/                 # Log sniffer, normalizer, and parser suite
-├── static/                    # Dark-mode SOC UI CSS & JS
-├── templates/                 # index.html
-├── tests/                     # Unit test suite
-└── sample_logs/               # Sample log files
-```
-
----
-
-## 🌐 How to Deploy on Vercel (5-Step Demonstration Guide)
-
-1. **Stage and Commit Changes**:
-   ```bash
-   cd C:\Users\user\.gemini\antigravity\scratch\siem_log_ingestion
-   git add .
-   git commit -m "Add Vercel deployment configuration"
-   git push -u origin main
-   ```
-2. **Open Vercel Dashboard**: Go to [https://vercel.com/dashboard](https://vercel.com/dashboard).
-3. **Import GitHub Repository**: Click **Add New...** $\rightarrow$ **Project** $\rightarrow$ Select `siem-log-ingestion`.
-4. **Deploy**: Vercel automatically detects the Python runtime (`api/index.py` & `vercel.json`). Click **Deploy**.
-5. **Access Public Demo URL**: Vercel will generate your live HTTPS URL (e.g. `https://siem-log-ingestion.vercel.app`).
+### Deploying on Vercel (Public College Demo)
+1. Go to [Vercel Dashboard](https://vercel.com/dashboard) $\rightarrow$ **Add New...** $\rightarrow$ **Project**.
+2. Import `sasipopuri007/siem-log-ingestion`.
+3. Vercel automatically detects `api/index.py` & `vercel.json`. Click **Deploy**.
