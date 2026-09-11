@@ -9,3 +9,4 @@ output/
 .pytest_cache/
 CSE-CIC-IDS2018/
 *.ids2018
+siem_state.json

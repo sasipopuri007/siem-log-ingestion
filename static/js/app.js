@@ -4,6 +4,7 @@ let uploadedFileMeta = null;
 let currentPage = 1;
 const perPage = 25;
 let charts = {};
+let isSyncingState = false;
 
 document.addEventListener("DOMContentLoaded", () => {
     initNavigation();
@@ -100,6 +101,50 @@ function initOrgSelector() {
     });
 }
 
+// Session State Persistence Sync Helpers
+function saveSessionRecords(records) {
+    if (!records || !Array.isArray(records) || records.length === 0) return;
+    try {
+        let existing = [];
+        const stored = localStorage.getItem("siem_session_records");
+        if (stored) {
+            existing = JSON.parse(stored);
+        }
+        // Deduplicate records by fingerprint
+        const existingFps = new Set(existing.map(r => r.fingerprint).filter(Boolean));
+        for (const r of records) {
+            if (!r.fingerprint || !existingFps.has(r.fingerprint)) {
+                existing.push(r);
+            }
+        }
+        localStorage.setItem("siem_session_records", JSON.stringify(existing));
+    } catch (e) {
+        console.warn("Failed to save session records to localStorage", e);
+    }
+}
+
+async function ensureServerlessStateSynced() {
+    if (isSyncingState) return false;
+    try {
+        const stored = localStorage.getItem("siem_session_records");
+        if (!stored) return false;
+        const records = JSON.parse(stored);
+        if (!records || !Array.isArray(records) || records.length === 0) return false;
+
+        isSyncingState = true;
+        const res = await fetch("/api/sync_events", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ records: records })
+        });
+        isSyncingState = false;
+        return res.ok;
+    } catch (e) {
+        isSyncingState = false;
+        return false;
+    }
+}
+
 // Upload & Process Log Execution
 function initProcessButton() {
     const btn = document.getElementById("btn-process-log");
@@ -155,6 +200,11 @@ function initProcessButton() {
             const processResult = await processRes.json();
             if (!processRes.ok) {
                 throw new Error(processResult.error || "Pipeline processing failed");
+            }
+
+            // Save records to localStorage for serverless session sync
+            if (processResult.records && Array.isArray(processResult.records)) {
+                saveSessionRecords(processResult.records);
             }
 
             // Complete Stepper & Display Results
@@ -287,9 +337,18 @@ async function loadEvents(page = 1) {
     });
 
     try {
-        const res = await fetch(`/api/events?${params}`);
-        const data = await res.json();
+        let res = await fetch(`/api/events?${params}`);
+        let data = await res.json();
         if (!res.ok) throw new Error(data.error);
+
+        // Serverless Auto-Hydration fallback if container cold-started with 0 events
+        if ((!data.events || data.events.length === 0) && page === 1 && !search && !org && !source && !sourceType && !severity) {
+            const synced = await ensureServerlessStateSynced();
+            if (synced) {
+                res = await fetch(`/api/events?${params}`);
+                data = await res.json();
+            }
+        }
 
         renderEventsTable(data.events || []);
         document.getElementById("events-total-count").innerText = data.total || 0;
@@ -444,9 +503,18 @@ function escapeHtml(str) {
 // Load Dashboard Metrics & Render Chart.js
 async function loadDashboardStats() {
     try {
-        const res = await fetch("/api/stats");
-        const stats = await res.json();
+        let res = await fetch("/api/stats");
+        let stats = await res.json();
         if (!res.ok) throw new Error(stats.error);
+
+        // Serverless Auto-Hydration fallback if container cold-started with 0 events
+        if (stats.total_events === 0) {
+            const synced = await ensureServerlessStateSynced();
+            if (synced) {
+                res = await fetch("/api/stats");
+                stats = await res.json();
+            }
+        }
 
         document.getElementById("stat-total-events").innerText = stats.total_events || 0;
         document.getElementById("stat-total-sources").innerText = stats.total_sources || 0;

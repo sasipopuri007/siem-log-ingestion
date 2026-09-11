@@ -22,6 +22,7 @@ def get_siem_data_dir() -> str:
 
 SIEM_DATA_DIR = get_siem_data_dir()
 DB_PATH = os.environ.get("SIEM_DB_PATH", os.path.join(SIEM_DATA_DIR, "siem.db"))
+STATE_FILE_PATH = os.path.join(SIEM_DATA_DIR, "siem_state.json")
 
 def get_db_connection():
     db_dir = os.path.dirname(DB_PATH)
@@ -88,7 +89,49 @@ def init_db():
     conn.commit()
     conn.close()
 
-def insert_batch(records: List[Dict[str, Any]]) -> Tuple[int, int]:
+def _save_state_file():
+    """Dumps all current security_logs records from SQLite into siem_state.json for serverless state hydration."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM security_logs ORDER BY id ASC")
+        rows = cursor.fetchall()
+        conn.close()
+        
+        all_records = [dict(r) for r in rows]
+        with open(STATE_FILE_PATH, "w", encoding="utf-8") as f:
+            json.dump(all_records, f, indent=2)
+    except Exception:
+        pass
+
+def ensure_db_hydrated():
+    """Auto-hydrates SQLite database from siem_state.json if cold-started with 0 records."""
+    try:
+        init_db()
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) as count FROM security_logs")
+        count = cursor.fetchone()["count"]
+        conn.close()
+
+        if count == 0 and os.path.exists(STATE_FILE_PATH):
+            with open(STATE_FILE_PATH, "r", encoding="utf-8") as f:
+                saved_records = json.load(f)
+            if saved_records:
+                sync_records(saved_records, save_state=False)
+    except Exception:
+        pass
+
+def sync_records(records: List[Dict[str, Any]], save_state: bool = True) -> Tuple[int, int]:
+    """Syncs/inserts records into security_logs without wiping existing data."""
+    if not records:
+        return 0, 0
+    
+    init_db()
+    inserted_count, dups = insert_batch(records, save_state=save_state)
+    return inserted_count, dups
+
+def insert_batch(records: List[Dict[str, Any]], save_state: bool = True) -> Tuple[int, int]:
     """Inserts batch of normalized records into security_logs table, tracking duplicates."""
     if not records:
         return 0, 0
@@ -126,6 +169,10 @@ def insert_batch(records: List[Dict[str, Any]]) -> Tuple[int, int]:
         if is_dup:
             duplicate_count += 1
         
+        raw_data_val = r.get("raw_data")
+        if isinstance(raw_data_val, (dict, list)):
+            raw_data_val = json.dumps(raw_data_val)
+
         rows_to_insert.append((
             r.get("timestamp"),
             r.get("organization") or "Default Org",
@@ -147,7 +194,7 @@ def insert_batch(records: List[Dict[str, Any]]) -> Tuple[int, int]:
             r.get("attack_type"),  # ONLY source-provided
             r.get("suspicious"),   # ONLY source-provided
             r.get("raw_log"),
-            r.get("raw_data"),
+            raw_data_val,
             r.get("log_file"),
             r.get("parser_status", "SUCCESS"),
             r.get("parser_warning"),
@@ -159,6 +206,9 @@ def insert_batch(records: List[Dict[str, Any]]) -> Tuple[int, int]:
     cursor.executemany(insert_sql, rows_to_insert)
     conn.commit()
     conn.close()
+
+    if save_state:
+        _save_state_file()
 
     return inserted_count, duplicate_count
 
@@ -175,6 +225,7 @@ def get_events(
     sort_order: str = "DESC"
 ) -> Tuple[List[Dict[str, Any]], int]:
     """Retrieves paginated and filtered events from security_logs table."""
+    ensure_db_hydrated()
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -231,6 +282,7 @@ def get_events(
     return events, total
 
 def get_event_by_id(event_id: int) -> Optional[Dict[str, Any]]:
+    ensure_db_hydrated()
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM security_logs WHERE id = ?", (event_id,))
@@ -240,6 +292,7 @@ def get_event_by_id(event_id: int) -> Optional[Dict[str, Any]]:
 
 def get_stats() -> Dict[str, Any]:
     """Computes SIEM dashboard metrics and aggregation statistics."""
+    ensure_db_hydrated()
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -298,6 +351,7 @@ def get_stats() -> Dict[str, Any]:
     }
 
 def get_unique_sources() -> List[str]:
+    ensure_db_hydrated()
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT DISTINCT source FROM security_logs WHERE source IS NOT NULL ORDER BY source")
@@ -306,6 +360,7 @@ def get_unique_sources() -> List[str]:
     return [r["source"] for r in rows]
 
 def get_unique_organizations() -> List[str]:
+    ensure_db_hydrated()
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT DISTINCT organization FROM security_logs WHERE organization IS NOT NULL ORDER BY organization")

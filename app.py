@@ -36,7 +36,7 @@ app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024
 # Lazy DB initialization helper
 def ensure_db_initialized():
     try:
-        database.init_db()
+        database.ensure_db_hydrated()
     except Exception:
         pass
 
@@ -126,6 +126,16 @@ def api_process():
         return jsonify(result), 200
     except Exception as e:
         return jsonify({"error": f"Processing error: {str(e)}"}), 500
+
+@app.route("/api/sync_events", methods=["POST"])
+def api_sync_events():
+    """Client session re-sync endpoint for serverless state hydration."""
+    data = request.get_json(silent=True) or {}
+    records = data.get("records", [])
+    if records and isinstance(records, list):
+        inserted, dups = database.sync_records(records)
+        return jsonify({"success": True, "synced": inserted, "duplicates": dups}), 200
+    return jsonify({"success": True, "synced": 0}), 200
 
 @app.route("/api/status/<job_id>", methods=["GET"])
 def api_status(job_id):

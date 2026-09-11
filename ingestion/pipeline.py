@@ -1,7 +1,7 @@
 import os
 import uuid
 import time
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from .detector import FormatDetector
 from .normalizer import SIEMNormalizer
 from .parsers.evtx_parser import EVTXParser
@@ -61,11 +61,13 @@ class LogIngestionPipeline:
             "warnings_count": 0,
             "duplicate_count": 0,
             "status": "PROCESSING",
-            "error": None
+            "error": None,
+            "records": []
         }
         PROCESSING_JOBS[current_job_id] = job_data
 
         batch = []
+        all_processed_records = []
         batch_size = 500
 
         try:
@@ -86,10 +88,11 @@ class LogIngestionPipeline:
                     rec_dict = norm_record.to_dict()
                     rec_dict["fingerprint"] = getattr(norm_record, "_fingerprint", None)
                     batch.append(rec_dict)
+                    all_processed_records.append(rec_dict)
                 except Exception as norm_err:
                     job_data["warnings_count"] += 1
                     # Append raw error record
-                    batch.append({
+                    err_rec = {
                         "timestamp": None,
                         "organization": organization or "Organization 1",
                         "source": source or filename,
@@ -98,7 +101,9 @@ class LogIngestionPipeline:
                         "log_file": filename,
                         "parser_status": "PARSED_WITH_WARNINGS",
                         "parser_warning": f"Normalization warning: {str(norm_err)}"
-                    })
+                    }
+                    batch.append(err_rec)
+                    all_processed_records.append(err_rec)
 
                 # Insert batch if limit reached
                 if len(batch) >= batch_size:
@@ -117,6 +122,7 @@ class LogIngestionPipeline:
             elapsed = round(time.time() - start_time, 3)
             job_data["elapsed_seconds"] = elapsed
             job_data["step"] = "ML Handoff Ready"
+            job_data["records"] = all_processed_records
             
             if job_data["warnings_count"] > 0:
                 job_data["status"] = "Processing completed with warnings."
